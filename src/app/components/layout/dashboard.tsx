@@ -1,22 +1,20 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FiThermometer, FiDroplet, FiRss, FiPower } from "react-icons/fi";
 import Logo from "../ui/logo";
 
 const Dashboard = () => {
-  // state management for LED, Ultrasonic, Temperature, and Humidity
   const [isLedOn, setIsLedOn] = useState(false);
   const [isLedGreenOn, setIsLedGreenOn] = useState(false);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [ultrasonic, setUltrasonic] = useState<number | null>(0);
-  const [latestId, setLatestId] = useState<number | null>(null); // state to keep track of the latest ID
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const result = await fetch("/api/getAll");
         const data = await result.json();
-        console.log("Fetched data:", data);
 
         if (data.length > 0) {
           const latestData = data[data.length - 1];
@@ -24,14 +22,8 @@ const Dashboard = () => {
           setHumidity(latestData.humidity);
           setUltrasonic(latestData.ultrasonic);
 
-          // Convert "on" to true and "off" to false
           setIsLedOn(latestData.red === "on");
           setIsLedGreenOn(latestData.green === "on");
-
-          // Update latestId state only if the id is different
-          if (latestData.id !== latestId) {
-            setLatestId(latestData.id);
-          }
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -39,9 +31,9 @@ const Dashboard = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 1000); // Fetch data every second
-    return () => clearInterval(interval); // Clean up the interval on component unmount
-  }, [latestId]); // Update when latestId changes
+    const interval = setInterval(fetchData, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const sendLedState = async (ledColor: string, state: string) => {
     try {
@@ -50,7 +42,7 @@ const Dashboard = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ led: ledColor, state: state }), // send LED color and state
+        body: JSON.stringify({ led: ledColor, state: state }),
       });
 
       if (!response.ok) {
@@ -66,73 +58,77 @@ const Dashboard = () => {
   const toggleLed = async () => {
     const newState = isLedOn ? "off" : "on";
     setIsLedOn(!isLedOn);
-    await sendLedState("red", newState); // send "red" and the new state to the API
+    await sendLedState("red", newState);
   };
 
-  const toggleUltrasonic = async () => {
+  const toggleLedGreen = async () => {
     const newState = isLedGreenOn ? "off" : "on";
     setIsLedGreenOn(!isLedGreenOn);
-    await sendLedState("green", newState); // send "green" and the new state to the API
+    await sendLedState("green", newState);
   };
-
   if (ultrasonic != 0) {
     return (
-      <div className="min-h-screen bg-gray-100 bg-gradient-to-br from-blue-500 to-purple-600">
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* LED RED Control */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                LED <span className="text-red-500">RED</span>
-              </h2>
-              <button
-                onClick={toggleLed}
-                className={`mt-4 px-4 py-2 rounded-md text-white ${
-                  isLedOn ? "bg-red-600" : "bg-green-600"
-                }`}
-              >
-                {isLedOn ? "Turn Off LED" : "Turn On LED"}
-              </button>
-            </div>
+      <div className="min-h-screen bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex flex-col items-center justify-center">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl w-full">
+          {/* LED RED Control */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-red-500 mb-4">LED RED</h2>
+            <button
+              onClick={toggleLed}
+              className={`w-full py-3 rounded-full font-medium text-white transition-all ${
+                isLedOn ? "bg-red-600" : "bg-green-600"
+              }`}
+            >
+              {isLedOn ? "Turn Off" : "Turn On"}
+            </button>
+          </div>
 
-            {/* LED GREEN Control */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                LED <span className="text-green-500">GREEN</span>
-              </h2>
-              <button
-                onClick={toggleUltrasonic}
-                className={`mt-4 px-4 py-2 rounded-md text-white ${
-                  isLedGreenOn ? "bg-red-600" : "bg-green-600"
-                }`}
-              >
-                {isLedGreenOn ? "Turn Off LED" : "Turn On LED"}
-              </button>
-            </div>
+          {/* LED GREEN Control */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-green-500 mb-4">
+              LED GREEN
+            </h2>
+            <button
+              onClick={toggleLedGreen}
+              className={`w-full py-3 rounded-full font-medium text-white transition-all ${
+                isLedGreenOn ? "bg-red-600" : "bg-green-600"
+              }`}
+            >
+              {isLedGreenOn ? "Turn Off" : "Turn On"}
+            </button>
+          </div>
 
-            {/* Temperature Data */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900">Temperature</h2>
-              <p className="mt-4 text-2xl font-bold text-gray-900">
-                {temperature !== null ? `${temperature}°C` : "Loading..."}
-              </p>
-            </div>
+          {/* Temperature Data */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4 flex items-center justify-center">
+              <FiThermometer className="mr-2" />
+              Temperature
+            </h2>
+            <p className="text-3xl font-bold">
+              {temperature !== null ? `${temperature}°C` : "Loading..."}
+            </p>
+          </div>
 
-            {/* Humidity Data */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900">Humidity</h2>
-              <p className="mt-4 text-2xl font-bold text-gray-900">
-                {humidity !== null ? `${humidity}%` : "Loading..."}
-              </p>
-            </div>
+          {/* Humidity Data */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-xl shadow-lg p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4 flex items-center justify-center">
+              <FiDroplet className="mr-2" />
+              Humidity
+            </h2>
+            <p className="text-3xl font-bold">
+              {humidity !== null ? `${humidity}%` : "Loading..."}
+            </p>
+          </div>
 
-            {/* Ultrasonic Data */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-lg font-medium text-gray-900">Ultrasonic</h2>
-              <p className="mt-4 text-2xl font-bold text-gray-900">
-                {ultrasonic !== null ? `${ultrasonic}cm` : "Loading..."}
-              </p>
-            </div>
+          {/* Ultrasonic Data */}
+          <div className="bg-white bg-opacity-20 backdrop-blur-md rounded-xl shadow-lg p-6 text-center sm:col-span-2 lg:col-span-1">
+            <h2 className="text-xl font-semibold mb-4 flex items-center justify-center">
+              <FiRss className="mr-2" />
+              Ultrasonic
+            </h2>
+            <p className="text-3xl font-bold">
+              {ultrasonic !== null ? `${ultrasonic} cm` : "Loading..."}
+            </p>
           </div>
         </div>
       </div>
